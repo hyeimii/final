@@ -100,6 +100,7 @@ library(gridExtra)
 # 그래프를 함께 표시
 grid.arrange(plot_volume, plot_amount, ncol = 2)
 ```
+![거래량,거래대금](https://github.com/hyeimii/final/assets/128936045/84342146-94d7-4d3e-b039-42b45c362864)
 
 거래량이 증가하면 거래대금도 증가하나 ?
 
@@ -126,7 +127,7 @@ grid.arrange(plot_volume, plot_amount, ncol = 2)
 따라서 투자자는 현대차보다 저렴한 가격에 우선주를 구매해 주가 상승시 이익을 얻을 수 있는 가능성이 있다.
 
 ```
-#현대차 관련주 거래량과 전체 거래량의 평균 
+# 현대차 관련주 거래량과 전체 거래량의 평균 
 
 # 필요한 종목만 추출
 subset_data <- combined_data[combined_data$종목명 %in% c("현대차3우B", "현대차우", "현대차", "현대차2우B"), ]
@@ -143,8 +144,7 @@ total_volume_mean <- mean(subset_data$거래량)
 
 ### 현대차 관련주의 종목들을 이용해서 총 거래량의 평균과 거래량 시각화
 
-```{r setu, include=TRUE}
-knitr::opts_chunk$set(echo = F,message=F,warning = F)
+```
 # 그래프 그리기
 ggplot(data_h, aes(x = 종목명, y = 거래량, fill = 종목명)) +
   geom_bar(stat = "identity", width = 0.3) +
@@ -156,6 +156,7 @@ ggplot(data_h, aes(x = 종목명, y = 거래량, fill = 종목명)) +
   theme(text = element_text(family = "AppleGothic"))
 ```
 
+![현대차](https://github.com/hyeimii/final/assets/128936045/09ecd48d-fe9b-4f2a-8e51-91c494577d9c)
 
 그래프를 보면 총 거래량의 평균보다 높은 종목은 현대차가 해당하는데 이는 시장에서 주목받는 종목이나 투자자들의 관심이 집중되어 있다는 것을 의미한다.
 현대차 관련주 들 중에서는 현대차 투자가 높다는 것이다.
@@ -348,6 +349,8 @@ ggplot(merged_df, aes(x = Year, group = Company_Name)) +
 
 거래량은 매수 + 매도를 더한 양이기 때문에 매수하는 사람만 많다고 해서 급증하지 않는다.
 거래량의 변화를 나타내는 그래프이다.
+
+![거래량종가](https://github.com/hyeimii/final/assets/128936045/4a2529ac-ce81-4ba6-8238-f60cbcabbbca)
 
 
 종가의 가격이 오른다고 거래량도 오를까 ?
