@@ -1,7 +1,7 @@
 # 증권데이터 분석하기
 
 도로에서 흔히 볼수있는 자동차 회사는 기아와 현대가있다.\
-기아와 현대의 10년간 거래량 데이터를 불러와서 거래량이 높은 연도에 각 기업에 무슨 이슈가 있는지 알아보고싶어졌다.
+기아와 현대의 5년간 거래량 데이터를 불러와서 거래량이 높은 연도에 각 기업에 무슨 이슈가 있는지 알아보고싶어졌다.
 
 기아와 현대차 분석 전에 자동차 관련주에는 어떤 종목이 있는지 살펴보았다.
 
@@ -164,10 +164,10 @@ ggplot(data_h, aes(x = 종목명, y = 거래량, fill = 종목명)) +
 현대차 관련주들 중에서 투자 관심이 높은 현대차
 이 두가지의 거래량,종가 분석을 해보겠다.
 
-### 기아와 현대차 10년간의 거래량, 종가를 분석
+### 기아와 현대차 5년간의 거래량, 종가를 분석
 
 ```
-#기아, 현대차 데이터 ( 2013~2023 거래량)
+#기아, 현대차 데이터 
 get_stock_data <- function(codes, start_date, end_date) {
   dfs <- list()  # 종목 데이터를 저장할 리스트 생성
   
@@ -217,9 +217,9 @@ for (code in codes) {
   cat("\n")
 }
 
+# 5년간 데이터 분석 
+
 # 결과를 저장할 빈 데이터 프레임 생성
-
-
 volume_sum_df <- data.frame(Stock_Code = character(), Year = numeric(), Volume_Sum = numeric(),stringsAsFactors = FALSE)
 
 # 각 종목 코드에 대해 반복
@@ -230,8 +230,8 @@ for (code in codes) {
   # 연도별 거래량 합을 저장할 빈 데이터 프레임 생성
   year_volume_df <- data.frame(Year = numeric(), Volume_Sum = numeric(), stringsAsFactors = FALSE)
   
-  # 2017부터 2023까지 각 연도에 대해 반복
-  for (year in 2013:2023) {
+  # 2019부터 2023까지 각 연도에 대해 반복
+  for (year in 2019:2023) {
     # 해당 연도에 해당하는 데이터 필터링
     df_year <- df[grepl(as.character(year), df[,"날짜"]), ]
     
@@ -261,13 +261,14 @@ volume_df <- volume_sum_df %>%
   spread(key = Year, value = Volume_Sum) %>% 
   left_join(code_mapping, by = "Stock_Code") %>% 
   select(Company_Name, everything())
+
 # 종목 코드 열 삭제
 volume_df$Stock_Code <- NULL
 
-# 10년간 년도별로 기아와 현대차의 거래량 분포 
+# 5년간 년도별로 기아와 현대차의 거래량 분포 
 print(volume_df)
 
-#10년간 년도별로  기아와 현대차의 종가 가격분포 
+#5년간 년도별로  기아와 현대차의 종가 가격분포 
 # 결과를 저장할 빈 데이터 프레임 생성
 price_sum_df <- data.frame(Stock_Code = character(), Year = numeric(), Price_Sum = numeric(), stringsAsFactors = FALSE)
 
@@ -279,8 +280,8 @@ for (code in codes) {
   # 연도별 종가 합을 저장할 빈 데이터 프레임 생성
   year_price_df <- data.frame(Year = numeric(), Price_Sum = numeric(), stringsAsFactors = FALSE)
   
-  # 2013부터 2023까지 각 연도에 대해 반복
-  for (year in 2013:2023) {
+  # 2019부터 2023까지 각 연도에 대해 반복
+  for (year in 2019:2023) {
     # 해당 연도에 해당하는 데이터 필터링
     df_year <- df[grepl(as.character(year), df[,"날짜"]), ]
     
@@ -313,7 +314,7 @@ price_df <- price_sum_df %>%
 # 종목 코드 열 삭제
 price_df$Stock_Code <- NULL
 
-# 2013년부터 2023년까지의 종가 합 데이터프레임 출력
+# 2019년부터 2023년까지의 종가 합 데이터프레임 출력
 print(price_df)
 
 # wide 형식에서 long 형식으로 변환
@@ -330,10 +331,10 @@ merged_df <- merge(long_df_v, long_df_p, by = c("Company_Name", "Year"))
 print(merged_df)
 
 # 그래프 생성
+
 ggplot(merged_df, aes(x = Year, group = Company_Name)) +
   geom_line(aes(y = Volume, color = Company_Name, linetype = "Volume"), size = 0.5) +
   geom_line(aes(y = price, color = Company_Name, linetype = "Price"), size = 0.5) +
-  labs(title = "주식 가격 및 거래량 변화", x = "연도", y = "가격 및 거래량") +
   scale_color_manual(values = c("red", "blue")) +
   scale_linetype_manual(values = c("dashed", "solid")) +
   theme_minimal() +
@@ -341,23 +342,27 @@ ggplot(merged_df, aes(x = Year, group = Company_Name)) +
   geom_point(aes(y = price, color = Company_Name), size = 1) +
   scale_y_continuous(sec.axis = sec_axis(~./1e6, name = "거래량(백만)")) +
   theme(text = element_text(family = "AppleGothic")) +
-  scale_x_continuous(breaks = seq(2012, 2023, 1), labels = seq(2012, 2023, 1))+
+  scale_x_continuous(breaks = seq(2019, 2023, 1), labels = seq(2019, 2023, 1))+
   guides(color = guide_legend(title = "종목"), linetype = guide_legend(title = "데이터"))
+
 ```
 
 거래량은 매수 + 매도를 더한 양이기 때문에 매수하는 사람만 많다고 해서 급증하지 않는다.\
 거래량의 변화를 나타내는 그래프이다.
 
-![거래량종가](https://github.com/hyeimii/final/assets/128936045/4a2529ac-ce81-4ba6-8238-f60cbcabbbca)
+![5년](https://github.com/hyeimii/final/assets/128936045/2ab12cba-84a3-436d-b5b4-2f16b878a9e2)
 
 
 종가의 가격이 오른다고 거래량도 오를까 ?
 그래프를 보면 모든 상황에서 그렇다고 확정지을수는 없다.\
-2018년에서 2019년 현대차의 종가는 하락했지만 거래량은 상승한다.
-
+2020년에서 2021년 현대차의 종가는 상승했지만 거래량은 하락한다.
+\
 현대차는 기아와 비슷한 시기 2019년부터 2020년까지는 상승했지만 그밑으로의 거래량의 하락세를 나타낸다.
-
-기아는 2019년 부터 2021년까지 꾸준히 상승했다.
-
+\
+기아는 2019년 부터 2021년까지 꾸준히 상승하다가 21년 이후 현재까지 하락세를 보이고있다.
+\
 기사를 찾아보니 기아의 전기차인 ev6의 출시가 2021년 이었던 점 ,
-애플이 기아에 4조원 규모의 투자를 했고 , 기아가 애플 프로젝트를 맡는다는 뉴스가 이시기에 있었다는 점이 기아 거래량의 상승 요인 중에 하나가 아닐까 생각한다.
+애플이 기아에 4조원 규모의 투자를 했고 , 기아가 애플 프로젝트를 맡는다는 뉴스가 이시기에 있었다는 점이 2020년 기아 거래량의 상승 요인 중에 하나가 아닐까 생각한다.
+현대차 또한 전기차 아이오닉이 출시된 2019년 부터 주가 거래량이 상승함을 보이고 있다.
+전기차전용공장에도 세액공제 해택을 주고 전기차를 소유하면 세금을 감면해주는 등 전기차 관련 정책이 증가하고 있고 \
+전기차 여러 이슈가 자동차 주가 변동에 영향이 있지 않을까 생각한다. 
