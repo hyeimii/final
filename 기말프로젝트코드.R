@@ -348,6 +348,7 @@ summary(kia_data)
 # Scatter plot for 기아
 sp1<-ggplot(kia_data, aes(x = Volume, y = price)) +
   geom_point(size=3,color="red") +
+  geom_smooth(method = "lm", se = FALSE, color = "steelblue") + #추세선
   labs(title = "Correlation: 기아") +
   theme_minimal()+
   scale_y_continuous(labels = scales::comma)+
@@ -359,9 +360,11 @@ hyundai_data <- merged_df[merged_df$Company_Name == "현대차", ]
 hyundai_data<-hyundai_data %>% select(Volume,price)
 cor(hyundai_data)
 summary(hyundai_data)
+
 # Scatter plot for 현대차
 sp2<-ggplot(hyundai_data, aes(x = Volume, y = price)) +
   geom_point(size=3,color="blue") +
+  geom_smooth(method = "lm", se = FALSE, color = "steelblue") + #추세선
   labs(title = "Correlation: 현대차") +
   theme_minimal()+
   scale_y_continuous(labels = scales::comma)+
