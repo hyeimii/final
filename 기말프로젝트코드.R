@@ -88,25 +88,6 @@ ggplot(combined_data, aes(x = 거래량, y = reorder(종목명, 거래량),fill 
 # 자동차업종에서는 엘브이엠씨홀딩스에 투자 관심이 가장 많다는 점을 알았다.
 
 
-#당일 현재가와 외국인 소진율 간의 상관관계 분석해보기 
-# 필요한 변수 선택
-selected_data <- combined_data[, c("현재가", "외국인비율")]
-
-# 결측치 처리
-selected_data <- na.omit(selected_data)
-
-# 상관관계 분석
-correlation <- cor(selected_data)
-
-# 결과 출력
-print(correlation)
-
-# 시각화 (산점도 그래프)
-library(ggplot2)
-ggplot(selected_data, aes(x = 현재가, y = 외국인비율)) +
-  geom_point() +
-  labs(x = "현재가", y = "외국인비율", title = "현재가와 외국인비율의 상관관계")
-
 # 시가총액 열의 데이터에서 숫자만추출
 market<- as.numeric(gsub(",", "", combined_data$시가총액))
 # 변환된 데이터를 데이터프레임에 다시 할당
@@ -155,8 +136,8 @@ get_stock_data <- function(codes, start_date, end_date) {
 }
 
 
-# 기아, 현대차
-codes <- c("000270", "005380") 
+# 종목들 10년간 데이터 
+codes <- codes
 
 # 시작일과 종료일 설정
 start_date <- "20130608"
@@ -201,8 +182,8 @@ for (code in codes) {
 }
 
 # 종목 코드와 기업 종목명을 매핑하는 데이터프레임 생성
-code_mapping <- data.frame(Stock_Code = c("000270", "005380"), 
-                           Company_Name = c("기아", "현대차"))
+code_mapping <- data.frame(Stock_Code = c(codes), 
+                           Company_Name = c(combined_data$종목명))
 
 # wide_df와 code_mapping을 조인하여 기업 종목명으로 변환
 volume_df <- volume_sum_df %>% 
@@ -213,7 +194,10 @@ volume_df <- volume_sum_df %>%
 # 종목 코드 열 삭제
 volume_df$Stock_Code <- NULL
 
-#10년간 년도별로  기아와 현대차의 종가 가격분포 
+# 년도별로 종목의 거래량의 합 
+volume_df
+
+#10년간 년도별로  기아와 현대차의 종가 가격분포 (가격대금)
 # 결과를 저장할 빈 데이터 프레임 생성
 price_sum_df <- data.frame(Stock_Code = character(), Year = numeric(), Price_Sum = numeric(), stringsAsFactors = FALSE)
 
@@ -248,14 +232,15 @@ for (code in codes) {
 }
 
 # 종목 코드와 기업 종목명을 매핑하는 데이터프레임 생성
-code_mapping <- data.frame(Stock_Code = c("000270", "005380"), 
-                           Company_Name = c("기아", "현대차"))
+code_mapping <- data.frame(Stock_Code = c(codes), 
+                           Company_Name = c(combined_data$종목명))
 
 # wide_df와 code_mapping을 조인하여 기업 종목명으로 변환
 price_df <- price_sum_df %>%
   spread(key = Year, value = Price_Sum) %>%
   left_join(code_mapping, by = "Stock_Code") %>%
   select(Company_Name, everything())
+
 # 종목 코드 열 삭제
 price_df$Stock_Code <- NULL
 
@@ -275,27 +260,91 @@ merged_df <- merge(long_df_v, long_df_p, by = c("Company_Name", "Year"))
 # 합친 데이터프레임 출력
 print(merged_df)
 
+sum_by_company <- merged_df %>%
+  group_by(Company_Name) %>%
+  summarise(
+    Total_Volume = sum(Volume),
+    Total_Price = sum(price))
+
+print(sum_by_company)
+
+# 거래량을 기준으로 내림차순 정렬
+sum_by_company_volume <- sum_by_company[order(sum_by_company$Total_Volume, decreasing = TRUE), ]
+
+# 거래대금을 기준으로 내림차순 정렬
+sum_by_company_price <- sum_by_company[order(sum_by_company$Total_Price, decreasing = TRUE), ]
+
+# 종목별로 색상 할당
+company_colors <- rainbow(nrow(sum_by_company))
+
+# 거래량을 기준으로 내림차순으로 정렬된 그래프 
+ggplot(sum_by_company_volume, aes(y= reorder(Company_Name, -Total_Volume), x = Total_Volume, 
+                                           fill = Company_Name)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = company_colors) +
+  ggtitle("종목별 10년간 거래량") +
+  xlab("종목명") +
+  ylab("총 거래량") +
+  theme(plot.title = element_text(hjust = 0.3)) +
+  coord_flip()+
+  scale_x_continuous(labels = scales::comma)
+
+# 거래대금을 기준으로 내림차순 정렬된 그래프
+ggplot(sum_by_company_price, aes(y = reorder(Company_Name, -Total_Price), 
+                                          x = Total_Price,fill = Company_Name)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = company_colors) +
+  ggtitle("종목별 10년간 거래대금") +
+  xlab("종목명") +
+  ylab("총 거래대금") +
+  coord_flip()+
+  scale_x_continuous(labels = scales::comma)
+
+
+
+#시가총액 top2 기아와 현대차 데이터만 비교하기 
+#기아와 현대차 데이터만 뽑기 
+subset_data <- merged_df[merged_df$Company_Name %in% c("기아", "현대차"), ]
+print(subset_data)
+
 # 거래량 그래프
-ggplot(merged_df, aes(x = Year, y = Volume, color = Company_Name)) +
+ggplot(subset_data, aes(x = Year, y = Volume, color = Company_Name)) +
   geom_line() +
-  labs(x = "Year", y = "거래량", title = "종목별 거래량") +
+  labs(x = "Year", y = "거래량", title = "종목별 거래량(10년)") +
   scale_color_manual(values = c("red", "blue")) +
   theme_minimal()+
   scale_y_continuous(labels = scales::comma)
 
+#거래량 막대그래프
+ggplot(subset_data, aes(x = Year, y = Volume, fill = Company_Name)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Year", y = "거래량", title = "종목별 거래량(10년)") +
+  scale_fill_manual(values = c("red", "blue")) +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::comma)
+
 # 거래대금 그래프
-ggplot(merged_df, aes(x = Year, y = price, color = Company_Name)) +
+ggplot(subset_data, aes(x = Year, y = price, color = Company_Name)) +
   geom_line() +
   labs(x = "Year", y = "거래대금(종가)", title = "종목별 거래대금(종가)") +
   scale_color_manual(values = c("red", "blue")) +
   theme_minimal()+
   scale_y_continuous(labels = scales::comma)
 
+#거래대금 막대그래프 
+ggplot(subset_data, aes(x = Year, y = price, fill = Company_Name)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Year", y = "거래대금(종가)", title = "종목별 거래대금(종가)") +
+  scale_fill_manual(values = c("red", "blue")) +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::comma)
+
+
 # Filter the data for 기아 and calculate the correlation
 kia_data <- merged_df[merged_df$Company_Name == "기아", ]
 kia_data<- kia_data %>% select(Volume,price)
 cor(kia_data)
-
+summary(kia_data)
 # Scatter plot for 기아
 sp1<-ggplot(kia_data, aes(x = Volume, y = price)) +
   geom_point(size=3,color="red") +
@@ -309,7 +358,7 @@ sp1<-ggplot(kia_data, aes(x = Volume, y = price)) +
 hyundai_data <- merged_df[merged_df$Company_Name == "현대차", ]
 hyundai_data<-hyundai_data %>% select(Volume,price)
 cor(hyundai_data)
-
+summary(hyundai_data)
 # Scatter plot for 현대차
 sp2<-ggplot(hyundai_data, aes(x = Volume, y = price)) +
   geom_point(size=3,color="blue") +
@@ -348,7 +397,7 @@ calculate_daily_return <- function(df) {
 kia_df <- as.data.frame(dfs[["000270"]])
 kia_change<-kia_df %>% select(날짜,종가, 거래량,외국인소진율)
 
-# 기아의 등락률 
+# 기아의 변화율
 kia_change_m<-calculate_daily_return(kia_change)
 
 
@@ -364,7 +413,7 @@ plot2 <- ggplot(kia_change_m, aes(x = 날짜, y = 외국인소진율, group = 1)
   theme_minimal()
 
 # Arrange the plots side by side
-grid.arrange(plot1, plot2, ncol = 2)
+grid.arrange(plot1, plot2, nrow = 2)
 
 #현대
 hyundai_df <- as.data.frame(dfs[["005380"]])
@@ -385,5 +434,4 @@ plot4<-ggplot(h_change_m, aes(x = 날짜, y = 외국인소진율,group=1)) +
   labs(x = "날짜", y = "외국인 소진율", title = "현대 외국인 소진율 변화") +
   theme_minimal()
 
-grid.arrange(plot3, plot4, ncol = 2)
-
+grid.arrange(plot3, plot4, nrow = 2)
